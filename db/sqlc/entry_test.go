@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -14,11 +13,10 @@ func createRandomEntry(t *testing.T) Entry {
 	account1 := createRandomAccount(t)
 
 	arg := CreateEntryParams{
-		AccountID:      account1.ID,
-		Amount: util.RandomMoney(),
+		AccountID: account1.ID,
+		Amount:    util.RandomMoney(),
 	}
 
-	
 	entry, err := testQueries.CreateEntry(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, entry)
@@ -54,15 +52,15 @@ func TestListEntrys(t *testing.T) {
 	}
 
 	arg := ListEntriesParams{
-		Limit: 5,
+		Limit:  5,
 		Offset: 5,
 	}
 
-	entrys, err := testQueries.ListEntries(context.Background(), arg)
+	entries, err := testQueries.ListEntries(context.Background(), arg)
 	require.NoError(t, err)
-	require.Len(t, entrys, 5)
+	require.Len(t, entries, 5)
 
-	for _, entry := range entrys {
+	for _, entry := range entries {
 		require.NotEmpty(t, entry)
 	}
 }
