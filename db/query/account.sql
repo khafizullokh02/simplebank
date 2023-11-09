@@ -10,7 +10,7 @@ INSERT INTO accounts (
 -- name: GetAccount :one
 SELECT * FROM accounts
 WHERE id = sqlc.arg('id')
-LIMIT sqlc.arg('limit');
+LIMIT 1;
 
 -- name: ListAccounts :many
 SELECT * FROM accounts

@@ -9,7 +9,7 @@ INSERT INTO entries (
 -- name: GetEntry :one
 SELECT * FROM entries
 WHERE id = sqlc.arg('id')
-LIMIT sqlc.arg('limit');
+LIMIT 1;
 
 -- name: ListEntries :many
 SELECT * FROM entries

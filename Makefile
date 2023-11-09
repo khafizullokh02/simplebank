@@ -24,4 +24,7 @@ sqlc:
 cleandb:
 	docker exec -it postgres14 psql -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" ${PSQL_URI}
 
-.PHONY: postgres createdb dropdb migrateup migratedown execdb sqlc cleandb
+test:
+	go test -v -cover ./...
+
+.PHONY: postgres createdb dropdb migrateup migratedown execdb sqlc cleandb test

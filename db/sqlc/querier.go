@@ -13,9 +13,9 @@ type Querier interface {
 	CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error)
 	CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error)
 	DeleteAccount(ctx context.Context, id int64) error
-	GetAccount(ctx context.Context, arg GetAccountParams) (Account, error)
-	GetEntry(ctx context.Context, arg GetEntryParams) (Entry, error)
-	GetTransfer(ctx context.Context, arg GetTransferParams) (Transfer, error)
+	GetAccount(ctx context.Context, id int64) (Account, error)
+	GetEntry(ctx context.Context, id int64) (Entry, error)
+	GetTransfer(ctx context.Context, id int64) (Transfer, error)
 	ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error)
 	ListEntries(ctx context.Context, arg ListEntriesParams) ([]Entry, error)
 	ListTransfers(ctx context.Context, arg ListTransfersParams) ([]Transfer, error)
