@@ -78,13 +78,27 @@ func TestDeleteAccount(t *testing.T) {
 	require.Empty(t, account2)
 }
 
+func TestGetAccountForUpdate(t *testing.T) {
+
+	account := createRandomAccount(t)
+
+	accountToUpdate, err := testQueries.GetAccountForUpdate(context.Background(), account.ID)
+	require.NoError(t, err)
+
+	require.Equal(t, account.ID, accountToUpdate.ID)
+	require.Equal(t, account.Owner, accountToUpdate.Owner)
+	require.Equal(t, account.Balance, accountToUpdate.Balance)
+	require.Equal(t, account.Currency, accountToUpdate.Currency)
+	require.WithinDuration(t, account.CreatedAt, accountToUpdate.CreatedAt, time.Second)
+}
+
 func TestListAccounts(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		createRandomAccount(t)
 	}
 
 	arg := ListAccountsParams{
-		Limit: 5,
+		Limit:  5,
 		Offset: 5,
 	}
 
