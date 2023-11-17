@@ -1,4 +1,4 @@
-PSQL_URI=postgres://root:secret@localhost:5432/simple_bank?sslmode=disable
+PSQL_URL=postgres://root:secret@localhost:5432/simple_bank?sslmode=disable
 MYSQL_URL=mysql://root:secret@localhost:5432:5432/simple_bank?sslmode=disable
 
 postgres:
@@ -11,7 +11,7 @@ dropdb:
 	docker exec -it postgres14 dropdb simple_bank
 
 migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose up
+	migrate -path db/migration -database ${PSQL_URL} -verbose up
 
 migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose down
@@ -23,7 +23,7 @@ sqlc:
 	sqlc generate
 
 cleandb:
-	docker exec -it postgres14 psql -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" ${PSQL_URI}
+	docker exec -it postgres14 psql -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" ${PSQL_URL}
 
 test:
 	go test -v -cover ./...
