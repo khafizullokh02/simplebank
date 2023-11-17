@@ -1,4 +1,5 @@
 PSQL_URI=postgres://root:secret@localhost:5432/simple_bank?sslmode=disable
+MYSQL_URL=mysql://root:secret@localhost:5432:5432/simple_bank?sslmode=disable
 
 postgres:
 	docker run --name postgres14 -p 5433:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:14-alpine
