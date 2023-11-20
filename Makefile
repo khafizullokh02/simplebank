@@ -27,4 +27,7 @@ cleandb:
 test:
 	go test -v -cover ./...
 
-.PHONY: postgres createdb dropdb migrateup migratedown execdb sqlc cleandb test
+server:
+	go run main.go
+
+.PHONY: postgres createdb dropdb migrateup migratedown execdb sqlc cleandb test server
