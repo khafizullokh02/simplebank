@@ -88,28 +88,17 @@ func (server *Server) listAccount(ctx *gin.Context) {
 
 }
 
-type updateAccountRequest struct {
-	ID       int64  `uri:"id" binding:"required,min=1"`
-	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
-}
-
 func (server *Server) updateAccount(ctx *gin.Context) {
-	var req updateAccountRequest
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
+	var (
+		updateReq db.UpdateAccountInfoParams
+	)
 
-	var updateReq db.UpdateAccountParams
 	if err := ctx.ShouldBindJSON(&updateReq); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	updateReq.ID = req.ID
-
-	account, err := server.store.UpdateAccount(ctx, updateReq)
+	account, err := server.store.UpdateAccountInfo(ctx, updateReq)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
