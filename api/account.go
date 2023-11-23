@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	db "github.com/khafizullokh02/simplebank/db/sqlc"
+	"github.com/spf13/cast"
 )
 
 type createAccountRequest struct {
@@ -92,6 +93,8 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 	var (
 		updateReq db.UpdateAccountInfoParams
 	)
+
+	updateReq.ID = cast.ToInt64(ctx.Param("id"))
 
 	if err := ctx.ShouldBindJSON(&updateReq); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
