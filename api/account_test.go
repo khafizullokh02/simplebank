@@ -5,12 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mockdb "github.com/khafizullokh02/simplebank/db/mock"
 	db "github.com/khafizullokh02/simplebank/db/sqlc"
@@ -115,7 +114,7 @@ func randomAccount() db.Account {
 }
 
 func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account db.Account) {
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
 	var gotAccount db.Account
@@ -124,8 +123,22 @@ func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account db.Accoun
 	require.Equal(t, account, gotAccount)
 }
 
+func requireBodyMatchAccounts(t *testing.T, body *bytes.Buffer, accounts []db.Account) {
+	data, err := io.ReadAll(body)
+	require.NoError(t, err)
+
+	var gotAccounts []db.Account
+	err = json.Unmarshal(data, &gotAccounts)
+	require.NoError(t, err)
+	require.Equal(t, accounts, gotAccounts)
+}
+
 func TestListAccountAPI(t *testing.T) {
-	accounts := randomAccount()
+	accounts := []db.Account{}
+
+	for i := 0; i < 5; i++ {
+		accounts = append(accounts, randomAccount())
+	}
 
 	testCases := []struct {
 		name          string
@@ -144,7 +157,7 @@ func TestListAccountAPI(t *testing.T) {
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchAccount(t, recorder.Body, db.Account{})
+				requireBodyMatchAccounts(t, recorder.Body, accounts)
 			},
 		},
 		{
@@ -176,12 +189,21 @@ func TestListAccountAPI(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			router := gin.Default()
-			w := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/accounts%d", nil)
-			router.ServeHTTP(w, req)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-			tc.checkResponse(t, w)
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			//start test server and send request
+			server := NewServer(store)
+			recorder := httptest.NewRecorder()
+
+			request, err := http.NewRequest(http.MethodGet, "/accounts"+tc.query, nil)
+			require.NoError(t, err)
+
+			server.router.ServeHTTP(recorder, request)
+			tc.checkResponse(t, recorder)
 		})
 	}
 }

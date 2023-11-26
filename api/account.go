@@ -10,7 +10,7 @@ import (
 
 type createAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
+	Currency string `json:"currency" binding:"required,currency"`
 }
 
 func (server *Server) createAccount(ctx *gin.Context) {
@@ -88,9 +88,8 @@ func (server *Server) listAccount(ctx *gin.Context) {
 }
 
 type updateAccountRequest struct {
-	ID       int64  `uri:"id" binding:"required,min=1"`
-	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
+	ID    int64  `uri:"id" binding:"required,min=1"`
+	Owner string `json:"owner" binding:"required"`
 }
 
 func (server *Server) updateAccount(ctx *gin.Context) {
