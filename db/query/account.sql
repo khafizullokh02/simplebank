@@ -47,6 +47,11 @@ SET
 WHERE
   id = sqlc.arg('id') RETURNING *;
 
+-- name: UpdateAccountInfo :one
+update accounts 
+  set owner = sqlc.arg('owner')
+where id = sqlc.arg('id') returning *;
+
 -- name: AddAccountBalance :one
 UPDATE
   accounts

@@ -207,3 +207,78 @@ func TestListAccountAPI(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateAccountAPI(t *testing.T) {
+	accounts := []db.Account{}
+
+	for i := 0; i < 5; i++ {
+		accounts = append(accounts, randomAccount())
+	}
+
+	testCases := []struct {
+		name          string
+		query         string
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name:  "OK",
+			query: "?Owner=qwerty",
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					UpdateAccountInfo(gomock.Any().String(), gomock.Any().String()).
+					Times(1).
+					Return(accounts, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+				requireBodyMatchAccounts(t, recorder.Body, accounts)
+			},
+		},
+		{
+			name:  "InternalError",
+			query: "?Owner=qwerty",
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					UpdateAccountInfo(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]db.Account{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name:  "InvalidOwner",
+			query: "?Owner=qwerty",
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					UpdateAccountInfo(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			//start test server and send request
+			server := NewServer(store)
+			recorder := httptest.NewRecorder()
+
+			request, err := http.NewRequest(http.MethodGet, "/accounts"+tc.query, nil)
+			require.NoError(t, err)
+
+			server.router.ServeHTTP(recorder, request)
+			tc.checkResponse(t, recorder)
+		})
+	}
+}
