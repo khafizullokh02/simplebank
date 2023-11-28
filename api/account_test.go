@@ -239,6 +239,26 @@ func TestUpdateAccountAPI(t *testing.T) {
 				requireBodyMatchAccount(t, recorder.Body, account)
 			},
 		},
+		{
+			name: "InternalError",
+			body: gin.H{
+				"owner": account.Owner + "updated",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateAccountInfoParams{
+					ID:    account.ID,
+					Owner: account.Owner + "updated",
+				}
+
+				store.EXPECT().
+					UpdateAccountInfo(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(db.Account{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -256,7 +276,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("accounts/%d", account.ID), bytes.NewReader(data))
+			request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("/accounts/%d", account.ID), bytes.NewReader(data))
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)
