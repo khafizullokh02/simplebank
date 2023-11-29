@@ -210,7 +210,6 @@ func TestListAccountAPI(t *testing.T) {
 }
 
 func TestUpdateAccountAPI(t *testing.T) {
-
 	account := randomAccount()
 
 	testCases := []struct {
@@ -284,5 +283,3 @@ func TestUpdateAccountAPI(t *testing.T) {
 		})
 	}
 }
-
-
