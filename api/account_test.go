@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	mockdb "github.com/khafizullokh02/simplebank/db/mock"
 	db "github.com/khafizullokh02/simplebank/db/sqlc"
@@ -209,55 +210,53 @@ func TestListAccountAPI(t *testing.T) {
 }
 
 func TestUpdateAccountAPI(t *testing.T) {
-	accounts := []db.Account{}
 
-	for i := 0; i < 5; i++ {
-		accounts = append(accounts, randomAccount())
-	}
+	account := randomAccount()
 
 	testCases := []struct {
 		name          string
-		query         string
+		body          gin.H
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
-			name:  "OK",
-			query: "?Owner=qwerty",
+			name: "OK",
+			body: gin.H{
+				"owner": account.Owner + "updated",
+			},
 			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateAccountInfoParams{
+					ID:    account.ID,
+					Owner: account.Owner + "updated",
+				}
+
 				store.EXPECT().
-					UpdateAccountInfo(gomock.Any().String(), gomock.Any().String()).
+					UpdateAccountInfo(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
-					Return(accounts, nil)
+					Return(account, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchAccounts(t, recorder.Body, accounts)
+				requireBodyMatchAccount(t, recorder.Body, account)
 			},
 		},
 		{
-			name:  "InternalError",
-			query: "?Owner=qwerty",
+			name: "InternalError",
+			body: gin.H{
+				"owner": account.Owner + "updated",
+			},
 			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateAccountInfoParams{
+					ID:    account.ID,
+					Owner: account.Owner + "updated",
+				}
 				store.EXPECT().
-					UpdateAccountInfo(gomock.Any(), gomock.Any()).
+					UpdateAccountInfo(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
-					Return([]db.Account{}, sql.ErrConnDone)
+					Return(db.Account{}, sql.ErrConnDone)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
-			},
-		},
-		{
-			name:  "InvalidOwner",
-			query: "?Owner=qwerty",
-			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().
-					UpdateAccountInfo(gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
 	}
@@ -274,7 +273,10 @@ func TestUpdateAccountAPI(t *testing.T) {
 			server := NewServer(store)
 			recorder := httptest.NewRecorder()
 
-			request, err := http.NewRequest(http.MethodGet, "/accounts"+tc.query, nil)
+			data, err := json.Marshal(tc.body)
+			require.NoError(t, err)
+
+			request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("/accounts/%d", account.ID), bytes.NewReader(data))
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)
@@ -282,3 +284,5 @@ func TestUpdateAccountAPI(t *testing.T) {
 		})
 	}
 }
+
+
