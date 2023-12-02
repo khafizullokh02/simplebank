@@ -1,6 +1,8 @@
 package api
 
 import (
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -12,7 +14,7 @@ type Server struct {
 	router *gin.Engine
 }
 
-func NewServer(store db.Store) *Server {
+func NewServer(t *testing.T, store db.Store) *Server {
 	server := &Server{store: store}
 	router := gin.Default()
 
