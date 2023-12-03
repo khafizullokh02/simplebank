@@ -16,7 +16,6 @@ import (
 	mockdb "github.com/khafizullokh02/simplebank/db/mock"
 	db "github.com/khafizullokh02/simplebank/db/sqlc"
 	"github.com/khafizullokh02/simplebank/util"
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +35,7 @@ func TestCreateAccountAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateAccount(gomock.Any(), gomock.Any()).
-					Times(0).
+					Times(1).
 					Return(db.Account{
 						ID:       1,
 						Owner:    "Asror",
@@ -70,7 +69,7 @@ func TestCreateAccountAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "Forbidden",
+			name: "Bad request",
 			request: createAccountRequest{
 				Owner:    "Asror",
 				Currency: "invalid currency",
@@ -78,11 +77,10 @@ func TestCreateAccountAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateAccount(gomock.Any(), gomock.Any()).
-					Times(0).
-					Return(db.Account{}, &pq.Error{Code: "23503"})
+					Times(0)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusForbidden, recorder.Code)
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
 		{
@@ -94,7 +92,7 @@ func TestCreateAccountAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateAccount(gomock.Any(), gomock.Any()).
-					Times(0).
+					Times(1).
 					Return(db.Account{}, errors.New("internal error"))
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -107,7 +105,7 @@ func TestCreateAccountAPI(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			store := mockdb.NewMockStore(ctrl)
-			server := NewServer(t, store)
+			server := newTestServer(t, store)
 			tc.buildStubs(store)
 			server.store = store
 
@@ -200,7 +198,7 @@ func TestGetAccountAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			//start test server and send request
-			server := NewServer(t, store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/accounts/%d", tc.accountID)
@@ -305,7 +303,7 @@ func TestListAccountAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			//start test server and send request
-			server := NewServer(t, store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			request, err := http.NewRequest(http.MethodGet, "/accounts"+tc.query, nil)
@@ -377,7 +375,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			//start test server and send request
-			server := NewServer(t, store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			data, err := json.Marshal(tc.body)
@@ -409,7 +407,7 @@ func TestDeleteAccountAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteAccount(gomock.Any(), gomock.Eq(accountID)).
-					Times(0).
+					Times(1).
 					Return(nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -438,7 +436,7 @@ func TestDeleteAccountAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteAccount(gomock.Any(), gomock.Eq(accountID)).
-					Times(0).
+					Times(1).
 					Return(errors.New("internal error"))
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -455,22 +453,14 @@ func TestDeleteAccountAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			//start test server and send request
-
-			server := NewServer(t, store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
-			tc.buildStubs(store)
-			server.store = store
 
-			router := gin.Default()
-			router.DELETE("/account/:id", server.deleteAccount)
+			request, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/accounts/%d", tc.request.ID), nil)
+			require.NoError(t, err)
 
-			w := httptest.NewRecorder()
-			url := fmt.Sprintf("/account/%d", tc.request.ID)
-			request, _ := http.NewRequest("DELETE", url, nil)
 			server.router.ServeHTTP(recorder, request)
-
-			tc.checkResponse(t, w)
+			tc.checkResponse(t, recorder)
 		})
 	}
 }
