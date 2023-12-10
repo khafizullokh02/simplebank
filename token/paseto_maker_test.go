@@ -41,21 +41,20 @@ func TestInvalidPasetoToken(t *testing.T) {
 
 	token, err := maker.CreateToken(username, duration)
 	require.NoError(t, err)
+	require.NotEmpty(t, token)
 
-	payload, err := NewPayload(token, duration)
+	payload, err := maker.VerifyToken(token+"invalid")
 	require.Error(t, err)
+	require.Empty(t, payload)
 	require.EqualError(t, err, ErrInvalidToken.Error())
-	require.Nil(t, payload)
 }
 
 func TestExpiredPasetoToken(t *testing.T) {
 	maker, err := NewPasetoMaker(util.RandomString(32))
 	require.NoError(t, err)
 
-	username := util.RandomOwner()
-	duration := time.Minute
 
-	token, err := maker.CreateToken(username, duration)
+	token, err := maker.CreateToken(util.RandomOwner(), -time.Minute)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
