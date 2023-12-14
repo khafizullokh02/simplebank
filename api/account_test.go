@@ -407,12 +407,16 @@ func TestUpdateAccountAPI(t *testing.T) {
 		name          string
 		body          gin.H
 		buildStubs    func(store *mockdb.MockStore)
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "OK",
 			body: gin.H{
 				"owner": account.Owner + "updated",
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateAccountInfoParams{
@@ -434,6 +438,9 @@ func TestUpdateAccountAPI(t *testing.T) {
 			name: "InternalError",
 			body: gin.H{
 				"owner": account.Owner + "updated",
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateAccountInfoParams{
@@ -469,6 +476,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("/accounts/%d", account.ID), bytes.NewReader(data))
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
 		})
@@ -476,22 +484,27 @@ func TestUpdateAccountAPI(t *testing.T) {
 }
 
 func TestDeleteAccountAPI(t *testing.T) {
-	accountID := int64(1)
+	user, _ := randomUser(t)
+	account := randomAccount(user.Username)
 
 	testCases := []struct {
 		name          string
 		request       deleteAccountRequest
 		buildStubs    func(store *mockdb.MockStore)
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "OK",
 			request: deleteAccountRequest{
-				ID: accountID,
+				ID: account.ID,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					DeleteAccount(gomock.Any(), gomock.Eq(accountID)).
+					DeleteAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
 					Return(nil)
 			},
@@ -503,6 +516,9 @@ func TestDeleteAccountAPI(t *testing.T) {
 			name: "BadRequest",
 			request: deleteAccountRequest{
 				ID: 0,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -516,11 +532,11 @@ func TestDeleteAccountAPI(t *testing.T) {
 		{
 			name: "InternalError",
 			request: deleteAccountRequest{
-				ID: accountID,
+				ID: account.ID,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					DeleteAccount(gomock.Any(), gomock.Eq(accountID)).
+					DeleteAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
 					Return(errors.New("internal error"))
 			},
@@ -544,6 +560,7 @@ func TestDeleteAccountAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/accounts/%d", tc.request.ID), nil)
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
 		})
