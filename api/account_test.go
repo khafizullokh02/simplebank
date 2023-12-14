@@ -299,10 +299,9 @@ func requireBodyMatchAccounts(t *testing.T, body *bytes.Buffer, accounts []db.Ac
 }
 
 func TestListAccountAPI(t *testing.T) {
-	accounts := []db.Account{}
-
 	user, _ := randomUser(t)
 
+	accounts := []db.Account{}
 	for i := 0; i < 5; i++ {
 		accounts = append(accounts, randomAccount(user.Username))
 	}

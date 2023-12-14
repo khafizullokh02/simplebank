@@ -42,7 +42,7 @@ func (server *Server) setupRouter() {
 	router := gin.Default()
 
 	router.POST("/users", server.createUser)
-	router.POST("/user/login", server.loginUser)
+	router.POST("/users/login", server.loginUser)
 	router.POST("/tokens/renew_access", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"msg": "ok"})
 	})
