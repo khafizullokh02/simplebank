@@ -331,7 +331,7 @@ func TestListAccountAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "NoAuthorization",
+			name:  "NoAuthorization",
 			query: "?page_id=1&page_size=n",
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
 			},
@@ -533,6 +533,9 @@ func TestDeleteAccountAPI(t *testing.T) {
 			name: "InternalError",
 			request: deleteAccountRequest{
 				ID: account.ID,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
