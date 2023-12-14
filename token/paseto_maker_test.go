@@ -43,7 +43,7 @@ func TestInvalidPasetoToken(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
-	payload, err := maker.VerifyToken(token+"invalid")
+	payload, err := maker.VerifyToken(token + "invalid")
 	require.Error(t, err)
 	require.Empty(t, payload)
 	require.EqualError(t, err, ErrInvalidToken.Error())
